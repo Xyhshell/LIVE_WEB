@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>实时预览</title>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0d1117;
+  --bg-subtle:#161b22;
+  --bg-inset:#010409;
+  --bg-elevated:#21262d;
+  --border:#30363d;
+  --border-muted:#21262d;
+  --fg:#e6edf3;
+  --fg-muted:#8b949e;
+  --fg-subtle:#6e7681;
+  --accent:#58a6ff;
+  --accent-emphasis:#1f6feb;
+  --success:#3fb950;
+  --success-emphasis:#238636;
+  --danger:#f85149;
+  --danger-emphasis:#da3633;
+  --attention:#d29922;
+  --radius:6px;
+  --radius-lg:12px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",
+       Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  background:var(--bg-subtle);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+}
+.topbar-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;max-width:1280px;margin:0 auto;
+  min-height:48px;flex-wrap:wrap;
+}
+.topbar-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.ring{
+  width:24px;height:24px;border-radius:50%;flex:none;
+  background:var(--bg);
+  border:1px solid var(--border);
+  position:relative;
+}
+.ring::after{
+  content:"";position:absolute;inset:6px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px var(--accent-emphasis);
+}
+.titles h1{
+  margin:0;font-size:14px;font-weight:600;letter-spacing:-0.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.titles p{margin:0;font-size:12px;color:var(--fg-muted)}
+
+.topbar-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--fg-muted);
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:0 10px;height:24px;white-space:nowrap;
+}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--fg-subtle);flex:none}
+.pill.ok{color:var(--success);border-color:rgba(63,185,80,0.4);background:rgba(63,185,80,0.1)}
+.pill.ok i{background:var(--success);animation:pulse 2s infinite}
+.pill.err{color:var(--danger);border-color:rgba(248,81,73,0.4);background:rgba(248,81,73,0.1)}
+.pill.err i{background:var(--danger)}
+.pill.rec{color:var(--danger);border-color:rgba(248,81,73,0.4);background:rgba(248,81,73,0.1)}
+.pill.rec i{background:var(--danger);animation:pulse 1.4s infinite}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(63,185,80,0.5)}
+  70%{box-shadow:0 0 0 6px rgba(63,185,80,0)}
+  100%{box-shadow:0 0 0 0 rgba(63,185,80,0)}
+}
+
+.icon-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 12px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--fg);font-size:12px;font-weight:500;
+  cursor:pointer;transition:background .15s, border-color .15s;
+  text-decoration:none;white-space:nowrap;
+}
+.icon-btn:hover{background:#30363d;border-color:#8b949e;text-decoration:none}
+.icon-btn:active{transform:scale(.98)}
+
+/* ---------- Main ---------- */
+.main{flex:1;padding:20px 24px;display:flex;justify-content:center}
+.container{
+  width:min(1280px,100%);display:flex;flex-direction:column;gap:16px;
+}
+
+.stage{
+  position:relative;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  background:var(--bg-inset);
+  border:1px solid var(--border);
+  aspect-ratio:16/9;
+  display:flex;align-items:center;justify-content:center;
+  min-height:220px;
+}
+.stage img{
+  width:100%;height:100%;
+  object-fit:contain;display:block;
+  background:var(--bg-inset);
+}
+.veil{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--fg-muted);font-size:13px;letter-spacing:.3px;
+  pointer-events:none;text-align:center;padding:20px;
+  background:rgba(1,4,9,0.7);
+  transition:opacity .35s ease;
+}
+.veil.hide{opacity:0}
+.hud{
+  position:absolute;left:12px;bottom:12px;
+  font-size:12px;color:var(--fg);
+  background:rgba(13,17,23,0.85);
+  border:1px solid var(--border);
+  border-radius:999px;padding:2px 10px;
+  font-variant-numeric:tabular-nums;
+  pointer-events:none;
+}
+.stage:fullscreen, :fullscreen .stage{
+  border-radius:0;border:none;
+  aspect-ratio:auto;height:100vh;max-height:100vh;
+}
+
+/* ---------- Controls ---------- */
+.controls{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;
+  padding:12px 16px;
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.btn{
+  appearance:none;
+  height:32px;padding:0 16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--bg-elevated);
+  color:var(--fg);font-size:14px;font-weight:500;
+  font-family:inherit;cursor:pointer;
+  transition:background .15s, border-color .15s;
+  white-space:nowrap;
+}
+.btn:hover{background:#30363d;border-color:#8b949e}
+.btn:active{background:#282e33}
+.btn:disabled{opacity:.6;cursor:default}
+.btn.primary{
+  background:var(--success-emphasis);
+  border-color:rgba(240,246,252,0.1);
+  color:#fff;
+}
+.btn.primary:hover{background:#2ea043;border-color:rgba(240,246,252,0.1)}
+.btn.danger{
+  background:rgba(218,54,51,0.14);
+  border-color:rgba(248,81,73,0.4);
+  color:var(--danger);
+}
+.btn.danger:hover{background:rgba(218,54,51,0.24);border-color:rgba(248,81,73,0.6)}
+.btn.ok{
+  background:rgba(35,134,54,0.14);
+  border-color:rgba(63,185,80,0.4);
+  color:var(--success);
+}
+.btn.ok:hover{background:rgba(35,134,54,0.24);border-color:rgba(63,185,80,0.6)}
+
+.meta{
+  font-size:12px;color:var(--fg-muted);
+  font-variant-numeric:tabular-nums;
+  margin-left:auto;
+}
+
+@media (max-width:640px){
+  .topbar{padding:0 12px}
+  .topbar-inner{min-height:auto;padding:8px 0}
+  .main{padding:12px}
+  .titles p{display:none}
+  .icon-btn{padding:0 8px;font-size:11px}
+  .meta{width:100%;margin-left:0;text-align:right}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-brand">
+      <span class="ring"></span>
+      <div class="titles">
+        <h1>实时预览</h1>
+      </div>
+    </div>
+    <nav class="topbar-nav">
+      <div class="pill" id="pill"><i></i><span id="pillText">连接中…</span></div>
+      <a class="icon-btn" href="/files" title="文件管理">&#128193; 文件</a>
+      <a class="icon-btn" href="/logs" title="实时日志">&#128220; 日志</a>
+      <a class="icon-btn" href="/settings" title="设置">&#9881; 设置</a>
+      <a class="icon-btn" href="/logout" title="退出登录">&#9099;</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main">
+  <div class="container">
+
+    <section class="stage" id="stage">
+      <img id="stream" src="/stream" alt="实时画面" decoding="async">
+      <div class="veil" id="veil">正在等待画面…</div>
+      <div class="hud" id="hud">—</div>
+    </section>
+
+    <footer class="controls">
+      <div class="actions">
+        <button class="btn primary" id="btnSave">保存当前帧</button>
+        <button class="btn ok" id="btnRecord" disabled>加载中…</button>
+        <button class="btn" id="btnFull">全屏</button>
+        <button class="btn" id="btnReload">重新连接</button>
+      </div>
+      <div class="meta" id="meta">—</div>
+    </footer>
+
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var img    = $("stream");
+  var veil   = $("veil");
+  var pill   = $("pill");
+  var pillTx = $("pillText");
+  var hud    = $("hud");
+  var meta   = $("meta");
+  var btnSave = $("btnSave");
+  var btnRec  = $("btnRecord");
+  var firstFrame = false;
+  var recRunning = false;
+  var btnReady = false;
+
+  function setPill(kind, text) {
+    pill.className = "pill" + (kind ? " " + kind : "");
+    pillTx.textContent = text;
+  }
+  function showVeil(text) { veil.textContent = text; veil.classList.remove("hide"); }
+  function hideVeil() { veil.classList.add("hide"); }
+
+  img.addEventListener("load", function () {
+    if (firstFrame) return;
+    firstFrame = true;
+    hideVeil();
+    setPill("ok", "实时中");
+  });
+  img.addEventListener("error", function () {
+    firstFrame = false;
+    setPill("err", "连接中断");
+    showVeil("连接中断，正在重连…");
+    setTimeout(reloadStream, 2500);
+  });
+  function reloadStream() { img.src = "/stream?t=" + Date.now(); }
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function stamp(d) {
+    return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+           "_" + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+  }
+  function flash(btn, text, err) {
+    var original = btn.dataset.label || btn.textContent;
+    btn.dataset.label = original;
+    btn.textContent = text;
+    btn.style.color = err ? "#f85149" : "#3fb950";
+    setTimeout(function () {
+      btn.textContent = original;
+      btn.style.color = "";
+    }, 1500);
+  }
+
+  btnSave.addEventListener("click", function () {
+    btnSave.disabled = true;
+    fetch("/snapshot.jpg?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) {
+        if (r.status === 401) { window.location.href = "/login"; throw new Error("unauth"); }
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.blob();
+      })
+      .then(function (blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "snapshot_" + stamp(new Date()) + ".jpg";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+        flash(btnSave, "已保存 ✓", false);
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        flash(btnSave, "保存失败", true);
+      })
+      .then(function () { btnSave.disabled = false; });
+  });
+
+  function updateRecBtn(running) {
+    recRunning = !!running;
+    btnReady = true;
+    btnRec.disabled = false;
+    if (recRunning) {
+      btnRec.textContent = "停止录制";
+      btnRec.className = "btn danger";
+    } else {
+      btnRec.textContent = "开始录制";
+      btnRec.className = "btn ok";
+    }
+  }
+
+  btnRec.addEventListener("click", function () {
+    if (!btnReady) return;
+    btnRec.disabled = true;
+    var action = recRunning ? "stop" : "start";
+    fetch("/api/recording", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: action })
+    })
+      .then(function (r) {
+        if (r.status === 401) { window.location.href = "/login"; throw new Error("unauth"); }
+        return r.json();
+      })
+      .then(function (res) {
+        if (res && res.running !== undefined) updateRecBtn(res.running);
+        else updateRecBtn(!recRunning);
+      })
+      .catch(function () { btnRec.disabled = false; });
+  });
+
+  $("btnFull").addEventListener("click", function () {
+    var el = $("stage");
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (el.requestFullscreen) { el.requestFullscreen(); }
+    else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); }
+  });
+
+  $("btnReload").addEventListener("click", function () {
+    firstFrame = false;
+    setPill("", "连接中…");
+    showVeil("正在等待画面…");
+    reloadStream();
+  });
+
+  function poll() {
+    fetch("/status?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) {
+        if (r.status === 401) { window.location.href = "/login"; return null; }
+        return r.json();
+      })
+      .then(function (s) {
+        if (!s) return;
+        if (s.width && s.height) hud.textContent = s.width + " × " + s.height;
+        var parts = [];
+        if (s.fps) parts.push(Number(s.fps).toFixed(1) + " fps");
+        parts.push((s.clients || 0) + " 位观看者");
+        meta.textContent = parts.join("  ·  ");
+
+        if (s.recording_running !== undefined) {
+          if (!btnReady || s.recording_running !== recRunning) {
+            updateRecBtn(s.recording_running);
+          }
+        }
+
+        if (s.state === "RECORDING") {
+          setPill("rec", "● 录制中");
+        } else if (s.state === "STREAMING") {
+          if (firstFrame) setPill("ok", "预览中");
+        } else if (s.state === "YIELDING") {
+          setPill("", "◉ 让路中");
+        } else if (s.state === "RECONNECTING") {
+          setPill("err", "◌ 重连中");
+        } else if (s.state === "ERROR") {
+          setPill("err", "✗ 错误");
+        } else if (s.state === "STARTING") {
+          setPill("", "启动中…");
+        } else if (firstFrame) {
+          setPill("ok", "实时中");
+        }
+      })
+      .catch(function () { });
+  }
+  setInterval(poll, 2000);
+  poll();
+})();
+</script>
+</body>
+</html>

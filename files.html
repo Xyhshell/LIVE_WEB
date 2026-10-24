@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>录制文件 · 预览</title>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0d1117;
+  --bg-subtle:#161b22;
+  --bg-inset:#010409;
+  --bg-elevated:#21262d;
+  --border:#30363d;
+  --border-muted:#21262d;
+  --fg:#e6edf3;
+  --fg-muted:#8b949e;
+  --fg-subtle:#6e7681;
+  --accent:#58a6ff;
+  --accent-emphasis:#1f6feb;
+  --success:#3fb950;
+  --success-emphasis:#238636;
+  --danger:#f85149;
+  --danger-emphasis:#da3633;
+  --radius:6px;
+  --radius-lg:12px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",
+       Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.topbar{
+  background:var(--bg-subtle);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+}
+.topbar-inner{
+  display:flex;align-items:center;gap:12px;
+  max-width:980px;margin:0 auto;min-height:48px;flex-wrap:wrap;
+}
+.crumb{
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 10px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--fg);font-size:12px;font-weight:500;
+  transition:background .15s, border-color .15s;
+}
+.crumb:hover{background:#30363d;border-color:#8b949e;text-decoration:none}
+.crumb-divider{color:var(--fg-subtle);font-size:16px;margin:0 2px}
+.crumb-current{font-size:14px;font-weight:600;color:var(--fg)}
+.summary{
+  margin-left:auto;
+  font-size:12px;color:var(--fg-muted);
+  font-variant-numeric:tabular-nums;
+}
+
+.main{display:flex;justify-content:center;padding:20px 24px 40px}
+.container{
+  width:min(980px,100%);
+  display:flex;flex-direction:column;gap:16px;
+}
+
+.toolbar{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+}
+
+.btn{
+  appearance:none;
+  height:32px;padding:0 16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--bg-elevated);
+  color:var(--fg);font-size:13px;font-weight:500;
+  font-family:inherit;cursor:pointer;
+  transition:background .15s, border-color .15s;
+  white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;
+  text-decoration:none;
+}
+.btn:hover{background:#30363d;border-color:#8b949e;text-decoration:none}
+.btn:active{background:#282e33}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.small{height:28px;padding:0 12px;font-size:12px;border-radius:5px}
+.btn.primary{
+  background:var(--success-emphasis);
+  border-color:rgba(240,246,252,0.1);
+  color:#fff;
+}
+.btn.primary:hover{background:#2ea043;border-color:rgba(240,246,252,0.1)}
+.btn.danger{
+  background:rgba(218,54,51,0.14);
+  border-color:rgba(248,81,73,0.4);
+  color:var(--danger);
+}
+.btn.danger:hover{background:rgba(218,54,51,0.24);border-color:rgba(248,81,73,0.6)}
+
+.card{
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+}
+
+.list{display:flex;flex-direction:column}
+.file{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 16px;
+  transition:background .15s;
+}
+.file + .file{border-top:1px solid var(--border-muted)}
+.file:hover{background:rgba(255,255,255,0.02)}
+.file-icon{
+  width:32px;height:32px;flex:none;border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(88,166,255,0.1);
+  border:1px solid rgba(88,166,255,0.3);
+  color:var(--accent);
+  font-size:10px;font-weight:600;letter-spacing:.5px;
+}
+.file-info{min-width:0;flex:1}
+.file-name{
+  font-size:13.5px;font-weight:500;color:var(--fg);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.file-meta{
+  font-size:12px;color:var(--fg-muted);margin-top:1px;
+  font-variant-numeric:tabular-nums;
+}
+.file-actions{display:flex;gap:6px;flex:none}
+
+.empty{
+  text-align:center;padding:48px 20px;color:var(--fg-muted);
+}
+.empty .big{font-size:32px;margin-bottom:8px;opacity:.6}
+
+.spinner{
+  display:inline-block;width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.15);
+  border-top-color:var(--accent);
+  animation:spin .8s linear infinite;margin-right:6px;
+  vertical-align:-2px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;
+  transform:translate(-50%,16px);
+  padding:8px 16px;
+  border-radius:var(--radius);
+  font-size:13px;
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  color:var(--fg);
+  opacity:0;pointer-events:none;
+  transition:.28s ease;z-index:9999;
+  max-width:90vw;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:rgba(248,81,73,0.5);color:var(--danger)}
+
+@media (max-width:640px){
+  .topbar{padding:0 12px}
+  .topbar-inner{min-height:auto;padding:8px 0}
+  .main{padding:12px}
+  .summary{width:100%;margin-left:0;text-align:right}
+  .file{padding:10px 12px;gap:10px}
+  .file-icon{width:28px;height:28px;font-size:10px}
+  .file-name{font-size:12.5px}
+  .btn.small{height:26px;padding:0 10px;font-size:11.5px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="crumb" href="/">&larr; 返回预览</a>
+    <span class="crumb-divider">/</span>
+    <span class="crumb-current">录制文件</span>
+    <span class="summary" id="summary">—</span>
+  </div>
+</header>
+
+<main class="main">
+<div class="container">
+
+  <div class="toolbar">
+    <button class="btn primary" id="btnRefresh">刷新列表</button>
+    <button class="btn" id="btnDeleteAll"
+            style="color:var(--danger);border-color:rgba(248,81,73,0.4)">全部删除</button>
+  </div>
+
+  <section class="card">
+    <div class="list" id="list">
+      <div class="empty"><div class="big">⏳</div>加载中…</div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function toast(msg, err) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.className = "toast show" + (err ? " err" : "");
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function () { el.className = "toast"; }, 2400);
+  }
+
+  function request(url, opts) {
+    return fetch(url, Object.assign({ cache: "no-store" }, opts || {}))
+      .then(function (r) {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          return Promise.reject(new Error("unauth"));
+        }
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      });
+  }
+
+  function fmtSize(n) {
+    if (n === 0 || n == null) return "0 B";
+    var units = ["B", "KB", "MB", "GB", "TB"];
+    var i = 0;
+    while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+    return (i === 0 ? n.toFixed(0) : n.toFixed(1)) + " " + units[i];
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function renderFiles(files) {
+    var list = $("list");
+    var sum = $("summary");
+    if (!files || !files.length) {
+      list.innerHTML = '<div class="empty"><div class="big">📁</div>' +
+        '暂无录制文件</div>';
+      sum.textContent = "共 0 个文件";
+      return;
+    }
+    var total = 0;
+    files.forEach(function (f) { total += (f.size || 0); });
+    sum.textContent = "共 " + files.length + " 个文件 · " + fmtSize(total);
+
+    var html = "";
+    files.forEach(function (f) {
+      var ext = (f.name.split(".").pop() || "").toUpperCase();
+      var enc = encodeURIComponent(f.name);
+      html += '<div class="file" data-name="' + esc(f.name) + '">';
+      html += '  <div class="file-icon">' + esc(ext.slice(0, 3)) + '</div>';
+      html += '  <div class="file-info">';
+      html += '    <div class="file-name" title="' + esc(f.name) + '">' + esc(f.name) + '</div>';
+      html += '    <div class="file-meta">' + esc(f.size_text || fmtSize(f.size)) +
+              ' &nbsp;·&nbsp; ' + esc(f.mtime_text || "") + '</div>';
+      html += '  </div>';
+      html += '  <div class="file-actions">';
+      html += '    <a class="btn small" href="/api/files/download?name=' + enc + '">下载</a>';
+      html += '    <button class="btn small danger" data-del="' + esc(f.name) + '">删除</button>';
+      html += '  </div>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+
+    list.querySelectorAll("[data-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var name = btn.getAttribute("data-del");
+        if (!confirm('确定删除文件？\n\n' + name)) return;
+        btn.disabled = true;
+        btn.textContent = "…";
+        request("/api/files/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name })
+        })
+          .then(function (res) {
+            if (res && res.ok) {
+              toast("已删除 " + name);
+              load();
+            } else {
+              toast("删除失败：" + ((res && res.error) || "未知错误"), true);
+              btn.disabled = false;
+              btn.textContent = "删除";
+            }
+          })
+          .catch(function (e) {
+            if (e && e.message === "unauth") return;
+            toast("删除失败", true);
+            btn.disabled = false;
+            btn.textContent = "删除";
+          });
+      });
+    });
+  }
+
+  function load() {
+    $("list").innerHTML = '<div class="empty"><div class="big">⏳</div>加载中…</div>';
+    return request("/api/files")
+      .then(function (data) {
+        renderFiles((data && data.files) || []);
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        $("list").innerHTML = '<div class="empty"><div class="big">⚠️</div>加载失败</div>';
+        toast("加载文件列表失败", true);
+      });
+  }
+
+  $("btnRefresh").addEventListener("click", function () {
+    var btn = $("btnRefresh");
+    btn.disabled = true;
+    var original = btn.textContent;
+    btn.innerHTML = '<span class="spinner"></span>刷新中…';
+    load().then(function () {
+      btn.disabled = false;
+      btn.textContent = original;
+    });
+  });
+
+  $("btnDeleteAll").addEventListener("click", function () {
+    if (!confirm("确定删除全部录制文件？此操作不可恢复！")) return;
+    $("btnDeleteAll").disabled = true;
+    request("/api/files/delete_all", { method: "POST" })
+      .then(function (res) {
+        if (res && res.ok) {
+          toast("已删除 " + (res.removed || 0) + " 个文件");
+          load();
+        } else {
+          toast("删除失败：" + ((res && res.error) || "未知错误"), true);
+        }
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        toast("删除失败", true);
+      })
+      .then(function () { $("btnDeleteAll").disabled = false; });
+  });
+
+  load();
+  setInterval(load, 15000);
+})();
+</script>
+</body>
+</html>

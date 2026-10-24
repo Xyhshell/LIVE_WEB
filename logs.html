@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>实时日志 · 预览</title>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0d1117;
+  --bg-subtle:#161b22;
+  --bg-inset:#010409;
+  --bg-elevated:#21262d;
+  --border:#30363d;
+  --border-muted:#21262d;
+  --fg:#e6edf3;
+  --fg-muted:#8b949e;
+  --fg-subtle:#6e7681;
+  --accent:#58a6ff;
+  --accent-emphasis:#1f6feb;
+  --success:#3fb950;
+  --success-emphasis:#238636;
+  --danger:#f85149;
+  --danger-emphasis:#da3633;
+  --radius:6px;
+  --radius-lg:12px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",
+       Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.topbar{
+  background:var(--bg-subtle);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+}
+.topbar-inner{
+  display:flex;align-items:center;gap:12px;
+  max-width:1080px;margin:0 auto;min-height:48px;flex-wrap:wrap;
+}
+.crumb{
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 10px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--fg);font-size:12px;font-weight:500;
+  transition:background .15s, border-color .15s;
+}
+.crumb:hover{background:#30363d;border-color:#8b949e;text-decoration:none}
+.crumb-divider{color:var(--fg-subtle);font-size:16px;margin:0 2px}
+.crumb-current{font-size:14px;font-weight:600;color:var(--fg)}
+
+.main{display:flex;justify-content:center;padding:20px 24px 40px}
+.container{
+  width:min(1080px,100%);
+  display:flex;flex-direction:column;gap:16px;
+}
+
+.card{
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+}
+.card-header{
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+}
+.card-header h2{
+  margin:0;font-size:13px;font-weight:600;color:var(--fg);
+  display:none;
+}
+.card-body{padding:12px 16px 14px}
+
+select{
+  height:32px;padding:0 32px 0 12px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--fg);font-size:13px;font-family:inherit;
+  cursor:pointer;
+  transition:border-color .15s, box-shadow .15s;
+  appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' fill='none' stroke='%238b949e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  min-width:200px;
+}
+select:focus{outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(88,166,255,0.3)}
+select option{background:var(--bg-subtle);color:var(--fg)}
+
+.sw{
+  display:inline-flex;align-items:center;gap:8px;
+  cursor:pointer;user-select:none;
+  font-size:12px;color:var(--fg-muted);
+}
+.sw input{display:none}
+.sw span{
+  width:32px;height:18px;border-radius:999px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  position:relative;transition:background .2s, border-color .2s;
+  flex:none;
+}
+.sw span::after{
+  content:"";position:absolute;top:2px;left:2px;
+  width:12px;height:12px;border-radius:50%;
+  background:var(--fg-subtle);
+  transition:transform .2s, background .2s;
+}
+.sw input:checked + span{
+  background:var(--success-emphasis);border-color:var(--success-emphasis);
+}
+.sw input:checked + span::after{transform:translateX(14px);background:#fff}
+
+.btn{
+  appearance:none;
+  height:32px;padding:0 16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--bg-elevated);
+  color:var(--fg);font-size:13px;font-weight:500;
+  font-family:inherit;cursor:pointer;
+  transition:background .15s, border-color .15s;
+  white-space:nowrap;
+}
+.btn:hover{background:#30363d;border-color:#8b949e}
+.btn:active{background:#282e33}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{
+  background:var(--success-emphasis);
+  border-color:rgba(240,246,252,0.1);
+  color:#fff;
+}
+.btn.primary:hover{background:#2ea043;border-color:rgba(240,246,252,0.1)}
+.btn.danger{
+  background:rgba(218,54,51,0.14);
+  border-color:rgba(248,81,73,0.4);
+  color:var(--danger);
+}
+.btn.danger:hover{background:rgba(218,54,51,0.24);border-color:rgba(248,81,73,0.6)}
+
+.log-pre{
+  font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  font-size:12px;line-height:1.6;
+  color:var(--fg);
+  background:var(--bg-inset);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  margin:0;
+  white-space:pre-wrap;word-break:break-all;
+  max-height:70vh;overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:#484f58 var(--bg-inset);
+}
+.log-pre::-webkit-scrollbar{width:10px;height:10px}
+.log-pre::-webkit-scrollbar-track{background:var(--bg-inset)}
+.log-pre::-webkit-scrollbar-thumb{background:#484f58;border-radius:6px}
+.log-pre::-webkit-scrollbar-thumb:hover{background:#6e7681}
+
+.log-empty{
+  text-align:center;padding:60px 20px;
+  color:var(--fg-muted);font-size:13px;
+  white-space:normal;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+.status-bar{
+  font-size:12px;color:var(--fg-muted);
+  margin-top:10px;
+  display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  font-variant-numeric:tabular-nums;
+}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;
+  transform:translate(-50%,16px);
+  padding:8px 16px;
+  border-radius:var(--radius);
+  font-size:13px;
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  color:var(--fg);
+  opacity:0;pointer-events:none;
+  transition:.28s ease;z-index:9999;
+  max-width:90vw;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:rgba(248,81,73,0.5);color:var(--danger)}
+
+@media (max-width:640px){
+  .topbar{padding:0 12px}
+  .topbar-inner{min-height:auto;padding:8px 0}
+  .main{padding:12px}
+  select{min-width:0;flex:1}
+  .log-pre{font-size:11px;padding:10px 12px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="crumb" href="/">&larr; 返回预览</a>
+    <span class="crumb-divider">/</span>
+    <span class="crumb-current">实时日志</span>
+  </div>
+</header>
+
+<main class="main">
+<div class="container">
+
+  <section class="card">
+    <div class="card-header">
+      <select id="logFile"></select>
+      <button class="btn" id="btnRefresh">刷新</button>
+      <label class="sw"><input type="checkbox" id="autoRefresh" checked><span></span>自动刷新</label>
+      <button class="btn" id="btnDeleteLog"
+              style="color:var(--danger);border-color:rgba(248,81,73,0.4);margin-left:auto">删除当前日志</button>
+      <button class="btn danger" id="btnDeleteAllLogs">删除全部日志</button>
+    </div>
+    <div class="card-body">
+      <pre class="log-pre" id="logContent">加载中…</pre>
+      <div class="status-bar">
+        <span id="statusLeft">—</span>
+        <span id="statusRight">—</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function toast(msg, err) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.className = "toast show" + (err ? " err" : "");
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function () { el.className = "toast"; }, 2400);
+  }
+
+  function request(url, opts) {
+    return fetch(url, Object.assign({ cache: "no-store" }, opts || {}))
+      .then(function (r) {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          return Promise.reject(new Error("unauth"));
+        }
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      });
+  }
+
+  var totalLines = 0;
+
+  function loadFileList(showToast) {
+    return request("/api/logs/files")
+      .then(function (data) {
+        var sel = $("logFile");
+        var prev = sel.value;
+        sel.innerHTML = "";
+        var files = (data && data.files) || [];
+        if (!files.length) {
+          var opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "（暂无日志文件）";
+          sel.appendChild(opt);
+          return;
+        }
+        files.forEach(function (f) {
+          var opt = document.createElement("option");
+          opt.value = f.name;
+          opt.textContent = f.date + "  (" + (f.size_text || "") + ")";
+          sel.appendChild(opt);
+        });
+        if (prev && files.some(function (x) { return x.name === prev; })) {
+          sel.value = prev;
+        }
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+      });
+  }
+
+  function loadLog(scrollToEnd) {
+    var name = $("logFile").value;
+    if (!name) {
+      $("logContent").textContent = "（暂无日志）";
+      return;
+    }
+    return request("/api/logs?name=" + encodeURIComponent(name))
+      .then(function (data) {
+        var pre = $("logContent");
+        var lines = (data && data.lines) || [];
+        totalLines = lines.length;
+
+        if (!lines.length) {
+          pre.innerHTML = '<div class="log-empty">（日志文件为空）</div>';
+        } else {
+          pre.textContent = lines.join("\n");
+        }
+
+        $("statusLeft").textContent = "共 " + totalLines + " 行";
+        var now = new Date();
+        $("statusRight").textContent = "更新于 " +
+          now.toLocaleTimeString("zh-CN", { hour12: false });
+
+        if (scrollToEnd) {
+          pre.scrollTop = pre.scrollHeight;
+        }
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        $("logContent").textContent = "加载失败";
+      });
+  }
+
+  $("logFile").addEventListener("change", function () {
+    loadLog(true);
+  });
+
+  $("btnRefresh").addEventListener("click", function () {
+    loadFileList().then(function () { return loadLog(true); });
+  });
+
+  $("btnDeleteLog").addEventListener("click", function () {
+    var name = $("logFile").value;
+    if (!name) { toast("没有可删除的日志", true); return; }
+    if (!confirm("确定删除日志文件？\n\n" + name)) return;
+    var btn = $("btnDeleteLog");
+    btn.disabled = true;
+    request("/api/logs/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name })
+    })
+      .then(function (res) {
+        if (res && res.ok) {
+          toast("已删除 " + name);
+          loadFileList().then(function () { return loadLog(true); });
+        } else {
+          toast("删除失败：" + ((res && res.error) || "未知错误"), true);
+        }
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        toast("删除失败", true);
+      })
+      .then(function () { btn.disabled = false; });
+  });
+
+  $("btnDeleteAllLogs").addEventListener("click", function () {
+    if (!confirm("确定删除全部日志文件？此操作不可恢复！")) return;
+    var btn = $("btnDeleteAllLogs");
+    btn.disabled = true;
+    request("/api/logs/delete_all", { method: "POST" })
+      .then(function (res) {
+        if (res && res.ok) {
+          toast("已删除 " + (res.removed || 0) + " 个日志文件");
+          loadFileList().then(function () { return loadLog(true); });
+        } else {
+          toast("删除失败：" + ((res && res.error) || "未知错误"), true);
+        }
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        toast("删除失败", true);
+      })
+      .then(function () { btn.disabled = false; });
+  });
+
+  loadFileList().then(function () { return loadLog(true); });
+
+  setInterval(function () {
+    if (!$("autoRefresh").checked) return;
+    loadFileList().then(function () { return loadLog(false); });
+  }, 3000);
+})();
+</script>
+</body>
+</html>

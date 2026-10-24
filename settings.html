@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>设置 · 预览</title>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0d1117;
+  --bg-subtle:#161b22;
+  --bg-inset:#010409;
+  --bg-elevated:#21262d;
+  --border:#30363d;
+  --border-muted:#21262d;
+  --fg:#e6edf3;
+  --fg-muted:#8b949e;
+  --fg-subtle:#6e7681;
+  --accent:#58a6ff;
+  --accent-emphasis:#1f6feb;
+  --success:#3fb950;
+  --success-emphasis:#238636;
+  --danger:#f85149;
+  --danger-emphasis:#da3633;
+  --radius:6px;
+  --radius-lg:12px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",
+       Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.topbar{
+  background:var(--bg-subtle);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+}
+.topbar-inner{
+  display:flex;align-items:center;gap:12px;
+  max-width:880px;margin:0 auto;min-height:48px;flex-wrap:wrap;
+}
+.crumb{
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 10px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--fg);font-size:12px;font-weight:500;
+  transition:background .15s, border-color .15s;
+}
+.crumb:hover{background:#30363d;border-color:#8b949e;text-decoration:none}
+.crumb-divider{color:var(--fg-subtle);font-size:16px;margin:0 2px}
+.crumb-current{font-size:14px;font-weight:600;color:var(--fg)}
+
+.main{display:flex;justify-content:center;padding:20px 24px 40px}
+.container{
+  width:min(880px,100%);
+  display:flex;flex-direction:column;gap:16px;
+}
+
+.card{
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+}
+.card-header{
+  padding:10px 16px;
+  background:var(--bg-subtle);
+  border-bottom:1px solid var(--border);
+}
+.card-header h2{
+  margin:0;font-size:13px;font-weight:600;
+  color:var(--fg);letter-spacing:.2px;
+}
+.card-body{padding:8px 16px 14px}
+
+.row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 0;flex-wrap:wrap;
+}
+.row + .row{border-top:1px solid var(--border-muted)}
+.row > label:first-child{
+  flex:0 0 150px;
+  font-size:13px;color:var(--fg);
+  font-weight:500;
+}
+.row .grow{flex:1;min-width:0}
+
+input,select{
+  height:32px;padding:0 12px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--fg);font-size:13px;font-family:inherit;
+  transition:border-color .15s, box-shadow .15s;
+  min-width:0;
+}
+input:focus,select:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(88,166,255,0.3);
+}
+input[type=number]{width:120px}
+input[type=text]{width:100%}
+select{cursor:pointer;min-width:200px;max-width:100%}
+select option{background:var(--bg-subtle);color:var(--fg)}
+
+.sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.sw input{display:none}
+.sw span{
+  width:36px;height:20px;border-radius:999px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  position:relative;transition:background .2s, border-color .2s;
+  flex:none;
+}
+.sw span::after{
+  content:"";position:absolute;top:2px;left:2px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--fg-subtle);
+  transition:transform .2s, background .2s;
+}
+.sw input:checked + span{
+  background:var(--success-emphasis);
+  border-color:var(--success-emphasis);
+}
+.sw input:checked + span::after{
+  transform:translateX(16px);background:#fff;
+}
+
+.btn{
+  appearance:none;
+  height:32px;padding:0 16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--bg-elevated);
+  color:var(--fg);font-size:13px;font-weight:500;
+  font-family:inherit;cursor:pointer;
+  transition:background .15s, border-color .15s;
+  white-space:nowrap;
+}
+.btn:hover{background:#30363d;border-color:#8b949e}
+.btn:active{background:#282e33}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{
+  background:var(--success-emphasis);
+  border-color:rgba(240,246,252,0.1);
+  color:#fff;
+}
+.btn.primary:hover{background:#2ea043;border-color:rgba(240,246,252,0.1)}
+
+.fixed-dir{
+  font-family:ui-monospace,SFMono-Regular,"SF Mono",Consolas,monospace;
+  font-size:12px;color:var(--fg-muted);
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:6px 12px;height:32px;
+  display:flex;align-items:center;
+  flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+.hint{font-size:12px;color:var(--fg-muted)}
+
+.actions{
+  display:flex;gap:10px;justify-content:flex-end;
+  position:sticky;bottom:14px;
+  padding:12px 16px;border-radius:var(--radius-lg);
+  background:rgba(22,27,34,0.94);
+  border:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;
+  transform:translate(-50%,16px);
+  padding:8px 16px;
+  border-radius:var(--radius);
+  font-size:13px;
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  color:var(--fg);
+  opacity:0;pointer-events:none;
+  transition:.28s ease;z-index:9999;
+  max-width:90vw;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:rgba(248,81,73,0.5);color:var(--danger)}
+
+@media (max-width:640px){
+  .topbar{padding:0 12px}
+  .main{padding:12px}
+  .row > label:first-child{flex:0 0 100%;margin-bottom:2px}
+  .row{gap:8px}
+  select{min-width:0;flex:1}
+  .actions{padding:10px 12px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="crumb" href="/">&larr; 返回预览</a>
+    <span class="crumb-divider">/</span>
+    <span class="crumb-current">设置</span>
+  </div>
+</header>
+
+<main class="main">
+<div class="container">
+
+  <section class="card">
+    <div class="card-header"><h2>摄像头</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <label for="camIndex">设备</label>
+        <select id="camIndex" class="grow"></select>
+        <button class="btn" id="refreshCams" title="重新枚举摄像头">刷新列表</button>
+      </div>
+      <div class="row">
+        <label for="camBackend">采集后端</label>
+        <select id="camBackend" class="grow">
+          <option value="CAP_DSHOW">CAP_DSHOW（Windows 推荐）</option>
+          <option value="CAP_MSMF">CAP_MSMF（Media Foundation）</option>
+          <option value="CAP_ANY">CAP_ANY（自动选择）</option>
+          <option value="CAP_V4L2">CAP_V4L2（Linux）</option>
+          <option value="CAP_AVFOUNDATION">CAP_AVFOUNDATION（macOS）</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>录制目录</label>
+        <div class="fixed-dir" title="录制目录固定在程序所在位置，不可更改">./recordings（固定）</div>
+      </div>
+      <div class="hint">修改设备或后端会重启录制线程，预览会短暂中断几秒。</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>视频参数</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <label>分辨率</label>
+        <input id="w" type="number" min="160" max="7680" step="2" placeholder="宽度">
+        <span style="color:var(--fg-muted)">×</span>
+        <input id="h" type="number" min="120" max="4320" step="2" placeholder="高度">
+        <span class="hint">像素</span>
+      </div>
+      <div class="row">
+        <label>期望帧率</label>
+        <input id="fps" type="number" min="1" max="120" step="0.1">
+        <span class="hint">以摄像头实测为准</span>
+      </div>
+      <div class="row">
+        <label>编码质量</label>
+        <input id="quality" type="number" min="0" max="100" step="1">
+        <span class="hint">0 - 100</span>
+      </div>
+      <div class="row">
+        <label>分段时长</label>
+        <input id="segment" type="number" min="1" max="1440" step="1">
+        <span class="hint">分钟，超过则切分</span>
+      </div>
+      <div class="row">
+        <label>输出格式</label>
+        <select id="container">
+          <option value="mkv">MKV（最抗中断）</option>
+          <option value="mp4">MP4（兼容性好）</option>
+          <option value="avi">AVI（老式设备）</option>
+          <option value="ts">TS（流式）</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>自动实测帧率</label>
+        <label class="sw"><input type="checkbox" id="measureFps"><span></span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>录制控制</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <label>最小文件</label>
+        <input id="minSize" type="number" min="0" max="1024" step="0.1">
+        <span class="hint">MB，小于则删除</span>
+      </div>
+      <div class="row">
+        <label>重试间隔</label>
+        <input id="retryInterval" type="number" min="0.5" max="60" step="0.5">
+        <span class="hint">秒</span>
+      </div>
+      <div class="row">
+        <label>最大重试</label>
+        <input id="maxRetries" type="number" min="1" max="100" step="1">
+        <span class="hint">次</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>静态画面检测</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <label>启用</label>
+        <label class="sw"><input type="checkbox" id="staticEnabled"><span></span></label>
+      </div>
+      <div class="row">
+        <label>静止时长</label>
+        <input id="staticTimeout" type="number" min="5" max="3600" step="1">
+        <span class="hint">秒，触发刷新</span>
+      </div>
+      <div class="row">
+        <label>差异阈值</label>
+        <input id="staticThreshold" type="number" min="0" max="255" step="0.1">
+        <span class="hint">0 - 255</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>让路控制</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <label>占用让路</label>
+        <label class="sw"><input type="checkbox" id="occEnabled"><span></span></label>
+        <span class="hint" style="margin-left:auto">检测到摄像头被占用时让路</span>
+      </div>
+      <div class="row">
+        <label>进程监控</label>
+        <label class="sw"><input type="checkbox" id="procEnabled"><span></span></label>
+        <span class="hint" style="margin-left:auto">监控常见摄像头软件启动</span>
+      </div>
+      <div class="row">
+        <label>让路时长</label>
+        <input id="yieldSeconds" type="number" min="5" max="600" step="1">
+        <span class="hint">秒</span>
+      </div>
+      <div class="row">
+        <label>占用确认</label>
+        <input id="confirmCount" type="number" min="1" max="20" step="1">
+        <span class="hint">连续检测次数</span>
+      </div>
+      <div class="row">
+        <label>失败阈值</label>
+        <input id="failThreshold" type="number" min="1" max="20" step="1">
+        <span class="hint">打开失败达到后让路</span>
+      </div>
+      <div class="row">
+        <label>占用扫描</label>
+        <input id="occPoll" type="number" min="0.5" max="60" step="0.5">
+        <span class="hint">秒（注册表轮询）</span>
+      </div>
+      <div class="row">
+        <label>进程扫描</label>
+        <input id="procPoll" type="number" min="0.5" max="60" step="0.5">
+        <span class="hint">秒（进程轮询）</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>编码</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <label>优先 H.264</label>
+        <label class="sw"><input type="checkbox" id="preferH264"><span></span></label>
+        <span class="hint" style="margin-left:auto">需 openh264.dll</span>
+      </div>
+      <div class="row">
+        <label>DLL 路径</label>
+        <input id="h264Path" type="text" class="grow" placeholder="留空则自动搜索">
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>维护</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <label>清理</label>
+        <button class="btn" id="cleanSmall">清理小文件</button>
+        <span class="hint">删除录制目录中体积过小的视频碎片</span>
+      </div>
+      <div class="row">
+        <label>日志</label>
+        <button class="btn" id="cleanLogs">清理全部日志</button>
+        <span class="hint">删除 logs 目录下全部 monitor_*.log</span>
+      </div>
+      <div class="row">
+        <label>录制</label>
+        <button class="btn" id="restartRec">重启录制</button>
+        <span class="hint">强制停止并重新启动录制线程</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" id="btnReset">重新载入</button>
+    <button class="btn primary" id="btnSave">保存并应用</button>
+  </div>
+
+</div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function toast(msg, err) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.className = "toast show" + (err ? " err" : "");
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function () { el.className = "toast"; }, 2400);
+  }
+
+  function request(url, opts) {
+    return fetch(url, Object.assign({ cache: "no-store" }, opts || {}))
+      .then(function (r) {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          return Promise.reject(new Error("unauth"));
+        }
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      });
+  }
+
+  var cameras = [];
+
+  function loadCameras(showToast) {
+    var btn = $("refreshCams");
+    btn.disabled = true;
+    btn.textContent = "枚举中…";
+    return request("/api/cameras")
+      .then(function (data) {
+        cameras = (data && data.cameras) || [];
+        var sel = $("camIndex");
+        sel.innerHTML = "";
+        if (!cameras.length) {
+          var o = document.createElement("option");
+          o.value = "";
+          o.textContent = "（未检测到摄像头）";
+          sel.appendChild(o);
+          if (showToast) toast("未检测到摄像头", true);
+          return;
+        }
+        cameras.forEach(function (c) {
+          var opt = document.createElement("option");
+          opt.value = String(c.index);
+          opt.textContent = "[" + c.index + "] " + (c.name || ("Camera " + c.index));
+          sel.appendChild(opt);
+        });
+        if (showToast) toast("设备列表已刷新");
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        if (showToast) toast("设备列表加载失败", true);
+      })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = "刷新列表";
+      });
+  }
+
+  function setVal(id, v) { var el = $(id); if (el) el.value = v == null ? "" : v; }
+  function setChk(id, v) { var el = $(id); if (el) el.checked = !!v; }
+  function numOrNull(id) {
+    var v = $(id).value;
+    if (v === "") return null;
+    var n = parseFloat(v);
+    return isNaN(n) ? null : n;
+  }
+
+  function loadSettings() {
+    return request("/api/settings")
+      .then(function (s) {
+        if (!s) return;
+        var sel = $("camIndex");
+        if (s.camera_index != null) {
+          sel.value = String(s.camera_index);
+          if (sel.value === "" && sel.options.length) sel.selectedIndex = 0;
+        }
+        setVal("camBackend", s.camera_backend || "CAP_DSHOW");
+        setVal("w", s.width); setVal("h", s.height);
+        setVal("fps", s.fps); setVal("quality", s.quality);
+        setVal("segment", s.segment_minutes);
+        setVal("container", s.container_format || "mkv");
+        setChk("measureFps", s.measure_fps_enabled);
+
+        setVal("minSize", s.min_file_size_mb);
+        setVal("retryInterval", s.retry_interval);
+        setVal("maxRetries", s.max_retries);
+
+        setChk("staticEnabled", s.static_detection_enabled);
+        setVal("staticTimeout", s.static_frame_timeout);
+        setVal("staticThreshold", s.static_diff_threshold);
+
+        setChk("occEnabled", s.occupancy_monitor_enabled);
+        setChk("procEnabled", s.process_monitor_enabled);
+        setVal("yieldSeconds", s.occupancy_yield_seconds);
+        setVal("confirmCount", s.occupancy_confirm_count);
+        setVal("failThreshold", s.open_fail_threshold);
+        setVal("occPoll", s.occupancy_poll_interval);
+        setVal("procPoll", s.process_poll_interval);
+
+        setChk("preferH264", s.prefer_h264);
+        setVal("h264Path", s.openh264_dll_path || "");
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        toast("设置加载失败", true);
+      });
+  }
+
+  function collectSettings() {
+    var p = {};
+    var camVal = $("camIndex").value;
+    if (camVal !== "") {
+      var n = parseInt(camVal, 10);
+      if (!isNaN(n)) p.camera_index = n;
+    }
+    p.camera_backend = $("camBackend").value;
+    p.container_format = $("container").value;
+    p.measure_fps_enabled = $("measureFps").checked;
+    p.static_detection_enabled = $("staticEnabled").checked;
+    p.occupancy_monitor_enabled = $("occEnabled").checked;
+    p.process_monitor_enabled = $("procEnabled").checked;
+    p.prefer_h264 = $("preferH264").checked;
+    p.openh264_dll_path = $("h264Path").value;
+
+    var keys = [
+      ["w", "width"], ["h", "height"], ["fps", "fps"],
+      ["quality", "quality"], ["segment", "segment_minutes"],
+      ["minSize", "min_file_size_mb"],
+      ["retryInterval", "retry_interval"], ["maxRetries", "max_retries"],
+      ["staticTimeout", "static_frame_timeout"],
+      ["staticThreshold", "static_diff_threshold"],
+      ["yieldSeconds", "occupancy_yield_seconds"],
+      ["confirmCount", "occupancy_confirm_count"],
+      ["failThreshold", "open_fail_threshold"],
+      ["occPoll", "occupancy_poll_interval"],
+      ["procPoll", "process_poll_interval"]
+    ];
+    keys.forEach(function (kv) {
+      var v = numOrNull(kv[0]);
+      if (v !== null) p[kv[1]] = v;
+    });
+    return p;
+  }
+
+  function saveSettings() {
+    var btn = $("btnSave");
+    btn.disabled = true;
+    btn.textContent = "保存中…";
+    request("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(collectSettings())
+    })
+      .then(function (res) {
+        if (res && res.restarted) toast("已保存并重启录制");
+        else toast("已保存");
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        toast("保存失败", true);
+      })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = "保存并应用";
+      });
+  }
+
+  function doAction(action, label) {
+    return request("/api/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: action })
+    })
+      .then(function (res) {
+        if (!res || !res.ok) { toast(label + "失败", true); return; }
+        if (action === "clean_small")
+          toast("已清理 " + (res.removed || 0) + " 个小文件");
+        else if (action === "clean_logs")
+          toast("已清理 " + (res.removed || 0) + " 个日志文件");
+        else if (action === "restart_recording") toast("录制已重启");
+        else toast(label + "完成");
+      })
+      .catch(function (e) {
+        if (e && e.message === "unauth") return;
+        toast(label + "失败", true);
+      });
+  }
+
+  $("refreshCams").addEventListener("click", function () {
+    loadCameras(true).then(loadSettings);
+  });
+  $("btnSave").addEventListener("click", saveSettings);
+  $("btnReset").addEventListener("click", function () {
+    loadCameras(false).then(loadSettings).then(function () { toast("已重新载入"); });
+  });
+  $("cleanSmall").addEventListener("click", function () {
+    doAction("clean_small", "清理小文件");
+  });
+  $("cleanLogs").addEventListener("click", function () {
+    if (!confirm("确定删除全部日志文件？此操作不可恢复！")) return;
+    doAction("clean_logs", "清理日志");
+  });
+  $("restartRec").addEventListener("click", function () {
+    doAction("restart_recording", "重启录制");
+  });
+
+  loadCameras(false).then(loadSettings);
+})();
+</script>
+</body>
+</html>
