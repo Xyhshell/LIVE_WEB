@@ -4,7 +4,7 @@
   "width": 1920,
   "height": 1080,
   "fps": 30.0,
-  "output_dir": "D:\\CpythonMain\\mov_live001\\demo_web_006\\recordings",
+  "output_dir": "",
   "quality": 100,
   "retry_interval": 3.0,
   "max_retries": 10,
@@ -31,6 +31,6 @@
   "container_format": "mkv",
   "web_auth": {
     "username": "admin",
-    "password": "adminjingmo"
+    "password": "admin"
   }
 }
